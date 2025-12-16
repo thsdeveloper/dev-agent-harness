@@ -20,12 +20,12 @@ import { createOutputFormatter } from './core/output-formatter.js';
 
 const program = new Command();
 
-// Helper to get workspace path
+// Função auxiliar para obter o caminho do workspace
 function getWorkspacePath(): string {
   return resolve(process.cwd(), 'workspace');
 }
 
-// Helper for user prompts
+// Função auxiliar para prompts do usuário
 async function askUser(question: string): Promise<string> {
   const rl = createInterface({
     input: process.stdin,
@@ -40,7 +40,7 @@ async function askUser(question: string): Promise<string> {
   });
 }
 
-// Check authentication (OAuth token for Max subscription, or API key)
+// Verificar autenticação (token OAuth para assinatura Max, ou API key)
 function checkAuth(): boolean {
   if (!isAuthConfigured()) {
     console.log(chalk.red('✗ Autenticação não encontrada!\n'));
@@ -56,15 +56,15 @@ function checkAuth(): boolean {
 
   const method = getAuthMethod();
   if (method === 'oauth') {
-    console.log(chalk.green('✓ Usando Claude Max subscription (sem custos de API)'));
+    console.log(chalk.green('✓ Usando assinatura Claude Max (sem custos de API)'));
   } else {
-    console.log(chalk.yellow('! Usando API Key (custos aplicam)'));
+    console.log(chalk.yellow('! Usando API Key (custos se aplicam)'));
   }
   return true;
 }
 
 /**
- * Shared handler for run commands (supports type filtering)
+ * Handler compartilhado para comandos de execução (suporta filtragem por tipo)
  */
 async function runCommandHandler(
   options: { project?: string; maxTurns?: string; supabaseRef?: string },
@@ -77,38 +77,38 @@ async function runCommandHandler(
   const projectPath = options.project ? resolve(options.project) : process.cwd();
   const maxTurns = parseInt(options.maxTurns || '50', 10);
 
-  // Validate feature_list.json
+  // Validar feature_list.json
   const featureListPath = join(projectPath, 'feature_list.json');
   if (!existsSync(featureListPath)) {
-    console.log(chalk.red('✗ No feature_list.json found in project.'));
-    console.log(chalk.gray(`  Looked in: ${featureListPath}`));
+    console.log(chalk.red('✗ Arquivo feature_list.json não encontrado no projeto.'));
+    console.log(chalk.gray(`  Procurado em: ${featureListPath}`));
     console.log(
-      chalk.cyan('\n  Run "harness init <name>" to create a new project first.')
+      chalk.cyan('\n  Execute "harness init <nome>" para criar um novo projeto primeiro.')
     );
     process.exit(1);
   }
 
-  // Load next feature (filtered by type if specified)
+  // Carregar próxima feature (filtrada por tipo se especificado)
   const contextBuilder = new ContextBuilder(projectPath);
   const feature = featureType
     ? await contextBuilder.getNextFeatureByType(featureType)
     : await contextBuilder.getNextFeature();
 
   if (!feature) {
-    const typeMsg = featureType ? ` of type "${featureType}"` : '';
+    const typeMsg = featureType ? ` do tipo "${featureType}"` : '';
     console.log(
-      chalk.green(`✓ No pending features${typeMsg} found. All features may be complete!`)
+      chalk.green(`✓ Nenhuma feature pendente${typeMsg} encontrada. Todas as features podem estar completas!`)
     );
-    console.log(chalk.cyan('\n  Run "harness status" to see project status.'));
+    console.log(chalk.cyan('\n  Execute "harness status" para ver o status do projeto.'));
     process.exit(0);
   }
 
   console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
   console.log(
-    chalk.cyan.bold(`  Starting session for: ${feature.id} - ${feature.title}`)
+    chalk.cyan.bold(`  Iniciando sessão para: ${feature.id} - ${feature.title}`)
   );
   if (feature.type) {
-    console.log(chalk.gray(`  Type: ${feature.type}`));
+    console.log(chalk.gray(`  Tipo: ${feature.type}`));
   }
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
@@ -124,7 +124,7 @@ async function runCommandHandler(
       process.stdout.write(formatted);
     },
     onProgress: (msg) => {
-      console.log(chalk.gray(`\n[Progress] ${msg}`));
+      console.log(chalk.gray(`\n[Progresso] ${msg}`));
     },
   });
 
@@ -132,49 +132,49 @@ async function runCommandHandler(
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
 
   if (result.success) {
-    console.log(chalk.green.bold(`✓ Feature ${result.featureId} completed successfully!`));
+    console.log(chalk.green.bold(`✓ Feature ${result.featureId} completada com sucesso!`));
     if (result.commitHash) {
       console.log(chalk.gray(`  Commit: ${result.commitHash}`));
     }
   } else {
-    console.log(chalk.yellow.bold(`⚠ Feature ${result.featureId} incomplete`));
+    console.log(chalk.yellow.bold(`⚠ Feature ${result.featureId} incompleta`));
     if (result.error) {
-      console.log(chalk.red(`  Error: ${result.error}`));
+      console.log(chalk.red(`  Erro: ${result.error}`));
     }
   }
 
-  // Show progress
+  // Mostrar progresso
   const stats = await contextBuilder.getProgressStats();
   console.log(
     chalk.gray(
-      `\n  Progress: ${stats.completed}/${stats.total} features (${stats.percentage}%)`
+      `\n  Progresso: ${stats.completed}/${stats.total} features (${stats.percentage}%)`
     )
   );
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 }
 
 // ============================================
-// INIT Command
+// Comando INIT
 // ============================================
 program
-  .command('init <name>')
-  .description('Initialize a new project with AI-generated feature list')
-  .option('-d, --description <desc>', 'Project description')
-  .option('-t, --tech <stack>', 'Comma-separated tech stack')
+  .command('init <nome>')
+  .description('Inicializar um novo projeto com lista de features gerada por IA')
+  .option('-d, --description <desc>', 'Descrição do projeto')
+  .option('-t, --tech <stack>', 'Stack tecnológica separada por vírgulas')
   .action(async (name: string, options: { description?: string; tech?: string }) => {
     if (!checkAuth()) {
       process.exit(1);
     }
 
-    const spinner = ora('Initializing project...').start();
+    const spinner = ora('Inicializando projeto...').start();
 
     try {
-      // Get description interactively if not provided
+      // Obter descrição interativamente se não fornecida
       let description = options.description;
       if (!description) {
         spinner.stop();
         description = await askUser(
-          chalk.cyan('Enter project description: ')
+          chalk.cyan('Digite a descrição do projeto: ')
         );
         spinner.start();
       }
@@ -187,7 +187,7 @@ program
 
       spinner.stop();
       console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
-      console.log(chalk.cyan.bold('  Claude Agent SDK: Generating feature list...'));
+      console.log(chalk.cyan.bold('  Claude Agent SDK: Gerando lista de features...'));
       console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
       const result = await agent.initialize({
@@ -196,7 +196,7 @@ program
         techStack,
         workspacePath,
         onProgress: (msg) => {
-          console.log(chalk.gray(`[Progress] ${msg}`));
+          console.log(chalk.gray(`[Progresso] ${msg}`));
         },
         onOutput: (text) => {
           const formatted = formatter.formatText(text);
@@ -205,37 +205,37 @@ program
       });
 
       if (result.success && result.featureList) {
-        console.log(chalk.green('\n✓ Project initialized successfully!'));
-        console.log(chalk.gray(`  Location: ${join(workspacePath, name)}`));
+        console.log(chalk.green('\n✓ Projeto inicializado com sucesso!'));
+        console.log(chalk.gray(`  Localização: ${join(workspacePath, name)}`));
         console.log(
           chalk.gray(
-            `  Features: ${result.featureList.features.length} features generated`
+            `  Features: ${result.featureList.features.length} features geradas`
           )
         );
         console.log(
-          chalk.gray(`  Tech stack: ${result.featureList.tech_stack?.join(', ') || 'Not specified'}`)
+          chalk.gray(`  Stack tecnológica: ${result.featureList.tech_stack?.join(', ') || 'Não especificada'}`)
         );
         if (result.totalCostUsd) {
-          console.log(chalk.gray(`  Cost: $${result.totalCostUsd.toFixed(4)}`));
+          console.log(chalk.gray(`  Custo: $${result.totalCostUsd.toFixed(4)}`));
         }
 
-        console.log(chalk.cyan('\nGenerated features:'));
+        console.log(chalk.cyan('\nFeatures geradas:'));
         for (const feature of result.featureList.features) {
           console.log(chalk.gray(`  ${feature.id}: ${feature.title}`));
         }
 
         console.log(
-          chalk.cyan(`\nNext steps:\n  cd workspace/${name}\n  harness run`)
+          chalk.cyan(`\nPróximos passos:\n  cd workspace/${name}\n  harness run`)
         );
       } else {
-        console.log(chalk.red(`\n✗ Failed to initialize: ${result.error}`));
+        console.log(chalk.red(`\n✗ Falha ao inicializar: ${result.error}`));
         process.exit(1);
       }
     } catch (error) {
       spinner.stop();
       console.log(
         chalk.red(
-          `\n✗ Error: ${error instanceof Error ? error.message : error}`
+          `\n✗ Erro: ${error instanceof Error ? error.message : error}`
         )
       );
       process.exit(1);
@@ -243,90 +243,90 @@ program
   });
 
 // ============================================
-// RUN Command
+// Comando RUN
 // ============================================
 program
   .command('run')
-  .description('Run a single coding session to implement the next feature')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-m, --max-turns <n>', 'Maximum turns for Claude', '50')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
+  .description('Executar uma sessão de codificação para implementar a próxima feature')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .action(async (options) => {
     await runCommandHandler(options);
   });
 
 // ============================================
-// REFACTOR Command
+// Comando REFACTOR
 // ============================================
 program
   .command('refactor')
-  .description('Run a refactoring session (processes next refactoring feature)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-m, --max-turns <n>', 'Maximum turns for Claude', '50')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
+  .description('Executar uma sessão de refatoração (processa próxima feature de refatoração)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .action(async (options) => {
     await runCommandHandler(options, 'refactoring');
   });
 
 // ============================================
-// FIX Command
+// Comando FIX
 // ============================================
 program
   .command('fix')
-  .description('Run a bugfix session (processes next bugfix feature)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-m, --max-turns <n>', 'Maximum turns for Claude', '50')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
+  .description('Executar uma sessão de correção de bugs (processa próximo bugfix)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .action(async (options) => {
     await runCommandHandler(options, 'bugfix');
   });
 
 // ============================================
-// IMPROVE Command
+// Comando IMPROVE
 // ============================================
 program
   .command('improve')
-  .description('Run an improvement session (processes next improvement feature)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-m, --max-turns <n>', 'Maximum turns for Claude', '50')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
+  .description('Executar uma sessão de melhorias (processa próxima melhoria)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .action(async (options) => {
     await runCommandHandler(options, 'improvement');
   });
 
 // ============================================
-// DOCS Command
+// Comando DOCS
 // ============================================
 program
   .command('docs')
-  .description('Run a documentation session (processes next docs feature)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-m, --max-turns <n>', 'Maximum turns for Claude', '50')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
+  .description('Executar uma sessão de documentação (processa próxima feature de docs)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .action(async (options) => {
     await runCommandHandler(options, 'docs');
   });
 
-// Valid targets for monorepo support
+// Targets válidos para suporte a monorepo
 const VALID_TARGETS: TargetType[] = ['web', 'mobile', 'shared', 'full', 'backend', 'api'];
 
 // ============================================
-// Helper for ADD commands
+// Helper para comandos ADD
 // ============================================
 async function addFeatureHandler(
   description: string,
   featureType: FeatureType,
   options: { project?: string; file?: string; atomize?: boolean; target?: string }
 ): Promise<void> {
-  // Validate target if provided
+  // Validar target se fornecido
   const target = options.target as TargetType | undefined;
   if (target && !VALID_TARGETS.includes(target)) {
-    console.log(chalk.red(`✗ Invalid target: ${target}`));
-    console.log(chalk.gray(`  Valid targets: ${VALID_TARGETS.join(', ')}`));
+    console.log(chalk.red(`✗ Target inválido: ${target}`));
+    console.log(chalk.gray(`  Targets válidos: ${VALID_TARGETS.join(', ')}`));
     process.exit(1);
   }
 
-  // If --atomize flag is set, use atomizeFeatureHandler instead
+  // Se flag --atomize estiver definida, usar atomizeFeatureHandler
   if (options.atomize) {
     return await atomizeFeatureHandler(description, featureType, { ...options, target });
   }
@@ -336,33 +336,33 @@ async function addFeatureHandler(
   }
 
   if (!description || description.trim().length === 0) {
-    console.log(chalk.red('✗ Description is required'));
-    console.log(chalk.gray('  Usage: harness add-bug "Description of the bug"'));
+    console.log(chalk.red('✗ Descrição é obrigatória'));
+    console.log(chalk.gray('  Uso: harness add-bug "Descrição do bug"'));
     process.exit(1);
   }
 
   const projectPath = options.project ? resolve(options.project) : process.cwd();
 
-  // Check if we're in a valid project
+  // Verificar se estamos em um projeto válido
   const featureListPath = join(projectPath, 'feature_list.json');
   if (!existsSync(featureListPath)) {
-    console.log(chalk.red('✗ No feature_list.json found in project.'));
-    console.log(chalk.gray(`  Looked in: ${featureListPath}`));
+    console.log(chalk.red('✗ Arquivo feature_list.json não encontrado no projeto.'));
+    console.log(chalk.gray(`  Procurado em: ${featureListPath}`));
     console.log(
-      chalk.cyan('\n  Run "harness init <name>" to create a new project first.')
+      chalk.cyan('\n  Execute "harness init <nome>" para criar um novo projeto primeiro.')
     );
     process.exit(1);
   }
 
   const targetLabel = target ? ` [${target.toUpperCase()}]` : '';
   console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
-  console.log(chalk.cyan.bold(`  Adding ${featureType} feature...${targetLabel}`));
+  console.log(chalk.cyan.bold(`  Adicionando feature ${featureType}...${targetLabel}`));
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
   const agent = new FeatureAdderAgent(DEFAULT_AGENT_CONFIG);
   const formatter = createOutputFormatter();
 
-  // Prepend target to description if specified
+  // Adicionar target à descrição se especificado
   const fullDescription = target
     ? `[${target.toUpperCase()}] ${description}`
     : description;
@@ -378,7 +378,7 @@ async function addFeatureHandler(
       process.stdout.write(formatted);
     },
     onProgress: (msg) => {
-      console.log(chalk.gray(`[Progress] ${msg}`));
+      console.log(chalk.gray(`[Progresso] ${msg}`));
     },
   });
 
@@ -386,19 +386,19 @@ async function addFeatureHandler(
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
 
   if (result.success && result.feature) {
-    console.log(chalk.green.bold('✓ Feature added successfully!'));
+    console.log(chalk.green.bold('✓ Feature adicionada com sucesso!'));
     console.log(chalk.gray(`  ID: ${result.feature.id}`));
-    console.log(chalk.gray(`  Title: ${result.feature.title}`));
-    console.log(chalk.gray(`  Type: ${result.feature.type || 'feature'}`));
+    console.log(chalk.gray(`  Título: ${result.feature.title}`));
+    console.log(chalk.gray(`  Tipo: ${result.feature.type || 'feature'}`));
     console.log(
       chalk.cyan(
-        `\n  Run "harness ${featureType === 'bugfix' ? 'fix' : featureType === 'refactoring' ? 'refactor' : featureType === 'improvement' ? 'improve' : featureType === 'docs' ? 'docs' : 'run'}" to implement this feature.`
+        `\n  Execute "harness ${featureType === 'bugfix' ? 'fix' : featureType === 'refactoring' ? 'refactor' : featureType === 'improvement' ? 'improve' : featureType === 'docs' ? 'docs' : 'run'}" para implementar esta feature.`
       )
     );
   } else {
-    console.log(chalk.red.bold('✗ Failed to add feature'));
+    console.log(chalk.red.bold('✗ Falha ao adicionar feature'));
     if (result.error) {
-      console.log(chalk.red(`  Error: ${result.error}`));
+      console.log(chalk.red(`  Erro: ${result.error}`));
     }
     process.exit(1);
   }
@@ -407,7 +407,7 @@ async function addFeatureHandler(
 }
 
 // ============================================
-// Helper for ADD-EPIC/ATOMIZE commands
+// Helper para comandos ADD-EPIC/ATOMIZE
 // ============================================
 async function atomizeFeatureHandler(
   description: string,
@@ -419,39 +419,39 @@ async function atomizeFeatureHandler(
   }
 
   if (!description || description.trim().length === 0) {
-    console.log(chalk.red('✗ Description is required'));
-    console.log(chalk.gray('  Usage: harness add-epic "Description of complex feature"'));
+    console.log(chalk.red('✗ Descrição é obrigatória'));
+    console.log(chalk.gray('  Uso: harness add-epic "Descrição da feature complexa"'));
     process.exit(1);
   }
 
   const projectPath = options.project ? resolve(options.project) : process.cwd();
   const target = options.target;
 
-  // Check if we're in a valid project
+  // Verificar se estamos em um projeto válido
   const featureListPath = join(projectPath, 'feature_list.json');
   if (!existsSync(featureListPath)) {
-    console.log(chalk.red('✗ No feature_list.json found in project.'));
-    console.log(chalk.gray(`  Looked in: ${featureListPath}`));
+    console.log(chalk.red('✗ Arquivo feature_list.json não encontrado no projeto.'));
+    console.log(chalk.gray(`  Procurado em: ${featureListPath}`));
     console.log(
-      chalk.cyan('\n  Run "harness init <name>" to create a new project first.')
+      chalk.cyan('\n  Execute "harness init <nome>" para criar um novo projeto primeiro.')
     );
     process.exit(1);
   }
 
   const targetLabel = target ? ` [${target.toUpperCase()}]` : '';
   console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
-  console.log(chalk.cyan.bold(`  Atomizing ${featureType} into multiple features...${targetLabel}`));
+  console.log(chalk.cyan.bold(`  Atomizando ${featureType} em múltiplas features...${targetLabel}`));
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
-  console.log(chalk.gray(`Complex feature: ${description}`));
+  console.log(chalk.gray(`Feature complexa: ${description}`));
   if (target) {
     console.log(chalk.gray(`Target: ${target}`));
   }
-  console.log(chalk.gray('This will be broken down into 3-10 atomic, executable features.\n'));
+  console.log(chalk.gray('Isso será dividido em 3-10 features atômicas e executáveis.\n'));
 
   const agent = new FeatureAtomizerAgent(DEFAULT_AGENT_CONFIG);
   const formatter = createOutputFormatter();
 
-  // Prepend target to description if specified
+  // Adicionar target à descrição se especificado
   const fullDescription = target
     ? `[${target.toUpperCase()}] ${description}`
     : description;
@@ -466,7 +466,7 @@ async function atomizeFeatureHandler(
       process.stdout.write(formatted);
     },
     onProgress: (msg) => {
-      console.log(chalk.gray(`[Progress] ${msg}`));
+      console.log(chalk.gray(`[Progresso] ${msg}`));
     },
   });
 
@@ -474,20 +474,20 @@ async function atomizeFeatureHandler(
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
 
   if (result.success && result.features) {
-    console.log(chalk.green.bold(`✓ Successfully atomized into ${result.features.length} features!`));
-    console.log(chalk.gray('\nAdded features:'));
+    console.log(chalk.green.bold(`✓ Atomizado com sucesso em ${result.features.length} features!`));
+    console.log(chalk.gray('\nFeatures adicionadas:'));
     result.features.forEach((feature, index) => {
       console.log(chalk.gray(`  ${index + 1}. [${feature.id}] ${feature.title}`));
     });
     console.log(
       chalk.cyan(
-        `\n  Run "harness ${featureType === 'bugfix' ? 'fix' : featureType === 'refactoring' ? 'refactor' : featureType === 'improvement' ? 'improve' : featureType === 'docs' ? 'docs' : 'run'}" to start implementing these features.`
+        `\n  Execute "harness ${featureType === 'bugfix' ? 'fix' : featureType === 'refactoring' ? 'refactor' : featureType === 'improvement' ? 'improve' : featureType === 'docs' ? 'docs' : 'run'}" para começar a implementar estas features.`
       )
     );
   } else {
-    console.log(chalk.red.bold('✗ Failed to atomize feature'));
+    console.log(chalk.red.bold('✗ Falha ao atomizar feature'));
     if (result.error) {
-      console.log(chalk.red(`  Error: ${result.error}`));
+      console.log(chalk.red(`  Erro: ${result.error}`));
     }
     process.exit(1);
   }
@@ -496,88 +496,88 @@ async function atomizeFeatureHandler(
 }
 
 // ============================================
-// ADD-BUG Command
+// Comando ADD-BUG
 // ============================================
 program
-  .command('add-bug <description>')
-  .description('Add a bugfix feature to the project')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-f, --file <path>', 'Related file path (optional)')
-  .option('-a, --atomize', 'Atomize complex bug into multiple features')
+  .command('add-bug <descricao>')
+  .description('Adicionar uma feature de correção de bug ao projeto')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-f, --file <path>', 'Caminho do arquivo relacionado (opcional)')
+  .option('-a, --atomize', 'Atomizar bug complexo em múltiplas features')
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     await addFeatureHandler(description, 'bugfix', options);
   });
 
 // ============================================
-// ADD-REFACTOR Command
+// Comando ADD-REFACTOR
 // ============================================
 program
-  .command('add-refactor <description>')
-  .description('Add a refactoring feature to the project')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-f, --file <path>', 'Related file path (optional)')
-  .option('-a, --atomize', 'Atomize complex refactoring into multiple features')
+  .command('add-refactor <descricao>')
+  .description('Adicionar uma feature de refatoração ao projeto')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-f, --file <path>', 'Caminho do arquivo relacionado (opcional)')
+  .option('-a, --atomize', 'Atomizar refatoração complexa em múltiplas features')
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     await addFeatureHandler(description, 'refactoring', options);
   });
 
 // ============================================
-// ADD-IMPROVEMENT Command
+// Comando ADD-IMPROVEMENT
 // ============================================
 program
-  .command('add-improvement <description>')
-  .description('Add an improvement feature to the project')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-f, --file <path>', 'Related file path (optional)')
-  .option('-a, --atomize', 'Atomize complex improvement into multiple features')
+  .command('add-improvement <descricao>')
+  .description('Adicionar uma feature de melhoria ao projeto')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-f, --file <path>', 'Caminho do arquivo relacionado (opcional)')
+  .option('-a, --atomize', 'Atomizar melhoria complexa em múltiplas features')
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     await addFeatureHandler(description, 'improvement', options);
   });
 
 // ============================================
-// ADD-DOCS Command
+// Comando ADD-DOCS
 // ============================================
 program
-  .command('add-docs <description>')
-  .description('Add a documentation feature to the project')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-f, --file <path>', 'Related file path (optional)')
-  .option('-a, --atomize', 'Atomize complex documentation into multiple features')
+  .command('add-docs <descricao>')
+  .description('Adicionar uma feature de documentação ao projeto')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-f, --file <path>', 'Caminho do arquivo relacionado (opcional)')
+  .option('-a, --atomize', 'Atomizar documentação complexa em múltiplas features')
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     await addFeatureHandler(description, 'docs', options);
   });
 
 // ============================================
-// ADD Command (generic)
+// Comando ADD (genérico)
 // ============================================
 program
-  .command('add <description>')
-  .description('Add a feature to the project (interactive type selection)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-f, --file <path>', 'Related file path (optional)')
+  .command('add <descricao>')
+  .description('Adicionar uma feature ao projeto (seleção interativa de tipo)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-f, --file <path>', 'Caminho do arquivo relacionado (opcional)')
   .option(
     '--type <type>',
-    'Feature type (bugfix, refactoring, improvement, docs, feature)'
+    'Tipo da feature (bugfix, refactoring, improvement, docs, feature)'
   )
-  .option('-a, --atomize', 'Atomize complex feature into multiple features')
+  .option('-a, --atomize', 'Atomizar feature complexa em múltiplas features')
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     let featureType = options.type as FeatureType | undefined;
 
-    // If type not provided, ask interactively
+    // Se tipo não fornecido, perguntar interativamente
     if (!featureType) {
-      console.log(chalk.cyan('\nSelect feature type:'));
-      console.log(chalk.gray('  1. bugfix'));
-      console.log(chalk.gray('  2. refactoring'));
-      console.log(chalk.gray('  3. improvement'));
-      console.log(chalk.gray('  4. docs'));
-      console.log(chalk.gray('  5. feature'));
+      console.log(chalk.cyan('\nSelecione o tipo da feature:'));
+      console.log(chalk.gray('  1. bugfix (correção de bug)'));
+      console.log(chalk.gray('  2. refactoring (refatoração)'));
+      console.log(chalk.gray('  3. improvement (melhoria)'));
+      console.log(chalk.gray('  4. docs (documentação)'));
+      console.log(chalk.gray('  5. feature (funcionalidade)'));
 
-      const answer = await askUser(chalk.cyan('\nEnter number (1-5): '));
+      const answer = await askUser(chalk.cyan('\nDigite o número (1-5): '));
       const typeMap: Record<string, FeatureType> = {
         '1': 'bugfix',
         '2': 'refactoring',
@@ -588,12 +588,12 @@ program
 
       featureType = typeMap[answer.trim()];
       if (!featureType) {
-        console.log(chalk.red('✗ Invalid selection'));
+        console.log(chalk.red('✗ Seleção inválida'));
         process.exit(1);
       }
     }
 
-    // Validate type
+    // Validar tipo
     const validTypes: FeatureType[] = [
       'bugfix',
       'refactoring',
@@ -603,10 +603,10 @@ program
     ];
     if (!validTypes.includes(featureType)) {
       console.log(
-        chalk.red(`✗ Invalid type: ${featureType}`)
+        chalk.red(`✗ Tipo inválido: ${featureType}`)
       );
       console.log(
-        chalk.gray('  Valid types: bugfix, refactoring, improvement, docs, feature')
+        chalk.gray('  Tipos válidos: bugfix, refactoring, improvement, docs, feature')
       );
       process.exit(1);
     }
@@ -615,30 +615,30 @@ program
   });
 
 // ============================================
-// ADD-EPIC Command
+// Comando ADD-EPIC
 // ============================================
 program
-  .command('add-epic <description>')
-  .description('Add a complex feature that will be atomized into multiple executable features')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
+  .command('add-epic <descricao>')
+  .description('Adicionar uma feature complexa que será atomizada em múltiplas features executáveis')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option(
     '--type <type>',
-    'Feature type (bugfix, refactoring, improvement, docs, feature)',
+    'Tipo da feature (bugfix, refactoring, improvement, docs, feature)',
     'feature'
   )
   .option('-t, --target <target>', 'Target: web, mobile, shared, full, backend, api')
   .action(async (description: string, options) => {
     let featureType = options.type as FeatureType;
 
-    // Validate target if provided
+    // Validar target se fornecido
     const target = options.target as TargetType | undefined;
     if (target && !VALID_TARGETS.includes(target)) {
-      console.log(chalk.red(`✗ Invalid target: ${target}`));
-      console.log(chalk.gray(`  Valid targets: ${VALID_TARGETS.join(', ')}`));
+      console.log(chalk.red(`✗ Target inválido: ${target}`));
+      console.log(chalk.gray(`  Targets válidos: ${VALID_TARGETS.join(', ')}`));
       process.exit(1);
     }
 
-    // Validate type
+    // Validar tipo
     const validTypes: FeatureType[] = [
       'bugfix',
       'refactoring',
@@ -647,9 +647,9 @@ program
       'feature',
     ];
     if (!validTypes.includes(featureType)) {
-      console.log(chalk.red(`✗ Invalid type: ${featureType}`));
+      console.log(chalk.red(`✗ Tipo inválido: ${featureType}`));
       console.log(
-        chalk.gray('  Valid types: bugfix, refactoring, improvement, docs, feature')
+        chalk.gray('  Tipos válidos: bugfix, refactoring, improvement, docs, feature')
       );
       process.exit(1);
     }
@@ -658,29 +658,29 @@ program
   });
 
 // ============================================
-// ADOPT Command
+// Comando ADOPT
 // ============================================
 program
   .command('adopt')
-  .description('Adopt an existing project by creating a feature_list.json')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-n, --name <name>', 'Project name (auto-detected from package.json or directory)')
-  .option('-d, --description <desc>', 'Project description')
+  .description('Adotar um projeto existente criando um feature_list.json')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-n, --name <name>', 'Nome do projeto (auto-detectado do package.json ou diretório)')
+  .option('-d, --description <desc>', 'Descrição do projeto')
   .action(async (options: { project?: string; name?: string; description?: string }) => {
     const projectPath = options.project ? resolve(options.project) : process.cwd();
     const featureListPath = join(projectPath, 'feature_list.json');
 
-    // Check if feature_list.json already exists
+    // Verificar se feature_list.json já existe
     if (existsSync(featureListPath)) {
-      console.log(chalk.yellow('! feature_list.json already exists in this project.'));
-      const answer = await askUser(chalk.cyan('Overwrite? [y/N]: '));
-      if (answer.toLowerCase() !== 'y') {
-        console.log(chalk.gray('Cancelled'));
+      console.log(chalk.yellow('! feature_list.json já existe neste projeto.'));
+      const answer = await askUser(chalk.cyan('Sobrescrever? [s/N]: '));
+      if (answer.toLowerCase() !== 's' && answer.toLowerCase() !== 'y') {
+        console.log(chalk.gray('Cancelado'));
         process.exit(0);
       }
     }
 
-    // Try to detect project info from package.json
+    // Tentar detectar informações do projeto do package.json
     let projectName = options.name;
     let projectDescription = options.description;
     let techStack: string[] = [];
@@ -697,7 +697,7 @@ program
           projectDescription = packageJson.description;
         }
 
-        // Detect tech stack from dependencies
+        // Detectar stack tecnológica das dependências
         const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
         if (deps) {
           if (deps['react']) techStack.push('React');
@@ -711,52 +711,52 @@ program
           if (deps['@supabase/supabase-js']) techStack.push('Supabase');
         }
       } catch {
-        // Ignore errors reading package.json
+        // Ignorar erros ao ler package.json
       }
     }
 
-    // Fallback to directory name
+    // Fallback para nome do diretório
     if (!projectName) {
-      projectName = projectPath.split('/').pop() || 'my-project';
+      projectName = projectPath.split('/').pop() || 'meu-projeto';
     }
 
-    // Ask for description if not provided
+    // Perguntar descrição se não fornecida
     if (!projectDescription) {
-      projectDescription = await askUser(chalk.cyan('Enter project description: '));
+      projectDescription = await askUser(chalk.cyan('Digite a descrição do projeto: '));
     }
 
-    // Create feature_list.json
+    // Criar feature_list.json
     const featureList = {
       project_name: projectName,
-      description: projectDescription || 'Project adopted by harness',
+      description: projectDescription || 'Projeto adotado pelo harness',
       ...(techStack.length > 0 && { tech_stack: techStack }),
       features: [] as { id: string; title: string; description: string; acceptance_criteria: string[]; passes: boolean }[],
     };
 
-    // Import types for FeatureList
+    // Importar tipos para FeatureList
     const fs = await import('node:fs/promises');
     await fs.writeFile(featureListPath, JSON.stringify(featureList, null, 2));
 
-    console.log(chalk.green('\n✓ Project adopted successfully!'));
-    console.log(chalk.gray(`  Created: ${featureListPath}`));
-    console.log(chalk.gray(`  Name: ${projectName}`));
+    console.log(chalk.green('\n✓ Projeto adotado com sucesso!'));
+    console.log(chalk.gray(`  Criado: ${featureListPath}`));
+    console.log(chalk.gray(`  Nome: ${projectName}`));
     if (techStack.length > 0) {
-      console.log(chalk.gray(`  Tech stack: ${techStack.join(', ')}`));
+      console.log(chalk.gray(`  Stack tecnológica: ${techStack.join(', ')}`));
     }
-    console.log(chalk.cyan('\nNext steps:'));
-    console.log(chalk.gray('  harness add-bug "description"      # Add a bug to fix'));
-    console.log(chalk.gray('  harness add-improvement "desc"     # Add an improvement'));
-    console.log(chalk.gray('  harness add-refactor "desc"        # Add a refactoring task'));
-    console.log(chalk.gray('  harness add "desc"                 # Add any feature type'));
+    console.log(chalk.cyan('\nPróximos passos:'));
+    console.log(chalk.gray('  harness add-bug "descrição"        # Adicionar um bug para corrigir'));
+    console.log(chalk.gray('  harness add-improvement "desc"     # Adicionar uma melhoria'));
+    console.log(chalk.gray('  harness add-refactor "desc"        # Adicionar uma refatoração'));
+    console.log(chalk.gray('  harness add "desc"                 # Adicionar qualquer tipo de feature'));
   });
 
 // ============================================
-// STATUS Command
+// Comando STATUS
 // ============================================
 program
   .command('status')
-  .description('Show project progress status')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
+  .description('Mostrar status de progresso do projeto')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .action(async (options: { project?: string }) => {
     const projectPath = options.project
       ? resolve(options.project)
@@ -766,7 +766,7 @@ program
     if (!existsSync(featureListPath)) {
       console.log(
         chalk.red(
-          '✗ No feature_list.json found. Are you in a project directory?'
+          '✗ Arquivo feature_list.json não encontrado. Você está em um diretório de projeto?'
         )
       );
       process.exit(1);
@@ -777,36 +777,36 @@ program
     const stats = await contextBuilder.getProgressStats();
 
     if (!featureList) {
-      console.log(chalk.red('✗ Could not load feature list'));
+      console.log(chalk.red('✗ Não foi possível carregar a lista de features'));
       process.exit(1);
     }
 
     console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
-    console.log(chalk.cyan.bold(`  Project: ${featureList.project_name}`));
+    console.log(chalk.cyan.bold(`  Projeto: ${featureList.project_name}`));
     console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.gray(`Description: ${featureList.description}`));
+    console.log(chalk.gray(`Descrição: ${featureList.description}`));
     console.log(
-      chalk.gray(`Tech stack: ${featureList.tech_stack?.join(', ') || 'Not specified'}`)
+      chalk.gray(`Stack tecnológica: ${featureList.tech_stack?.join(', ') || 'Não especificada'}`)
     );
 
-    // Progress bar
+    // Barra de progresso
     const barLength = 40;
     const filled = Math.round((stats.percentage / 100) * barLength);
     const empty = barLength - filled;
     const progressBar =
       chalk.green('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
-    console.log(`\nProgress: [${progressBar}] ${stats.percentage}%`);
+    console.log(`\nProgresso: [${progressBar}] ${stats.percentage}%`);
     console.log(
       chalk.gray(
-        `          ${stats.completed} completed / ${stats.pending} pending / ${stats.total} total`
+        `           ${stats.completed} completas / ${stats.pending} pendentes / ${stats.total} total`
       )
     );
 
-    // Type breakdown
+    // Detalhamento por tipo
     const statsByType = await contextBuilder.getProgressStatsByType();
     if (Object.keys(statsByType.byType).length > 0) {
-      console.log(chalk.cyan('\n📊 Breakdown by type:'));
+      console.log(chalk.cyan('\n📊 Detalhamento por tipo:'));
       for (const [type, typeStats] of Object.entries(statsByType.byType)) {
         const total = typeStats.completed + typeStats.pending;
         const typePercent =
@@ -831,29 +831,29 @@ program
       console.log(`  ${status} ${feature.id}: ${title}${typeLabel}`);
     }
 
-    // Next feature
+    // Próxima feature
     const nextFeature = await contextBuilder.getNextFeature();
     if (nextFeature) {
-      console.log(chalk.cyan(`\nNext feature: ${nextFeature.id} - ${nextFeature.title}`));
+      console.log(chalk.cyan(`\nPróxima feature: ${nextFeature.id} - ${nextFeature.title}`));
       console.log(chalk.gray(`  ${nextFeature.description}`));
     } else {
-      console.log(chalk.green('\n✓ All features complete!'));
+      console.log(chalk.green('\n✓ Todas as features completas!'));
     }
 
     console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
   });
 
 // ============================================
-// LOOP Command
+// Comando LOOP
 // ============================================
 program
   .command('loop')
-  .description('Run coding sessions in a loop until all features are complete')
-  .option('-m, --max <n>', 'Maximum sessions', '100')
-  .option('-t, --max-turns <n>', 'Maximum turns per session', '50')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
-  .option('-s, --supabase-ref <ref>', 'Supabase project ref (overrides SUPABASE_PROJECT_REF env)')
-  .option('--type <type>', 'Process only features of specific type')
+  .description('Executar sessões de codificação em loop até todas as features estarem completas')
+  .option('-m, --max <n>', 'Máximo de sessões', '100')
+  .option('-t, --max-turns <n>', 'Máximo de turnos por sessão', '50')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
+  .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('--type <type>', 'Processar apenas features de um tipo específico')
   .action(async (options: { max?: string; maxTurns?: string; project?: string; supabaseRef?: string; type?: string }) => {
     if (!checkAuth()) {
       process.exit(1);
@@ -867,14 +867,14 @@ program
 
     // Debug: log Supabase project ref
     if (options.supabaseRef) {
-      console.log(chalk.gray(`[CLI] Supabase project ref from CLI: ${options.supabaseRef}`));
+      console.log(chalk.gray(`[CLI] Ref do projeto Supabase via CLI: ${options.supabaseRef}`));
     }
 
     const featureListPath = join(projectPath, 'feature_list.json');
     if (!existsSync(featureListPath)) {
       console.log(
         chalk.red(
-          '✗ No feature_list.json found. Are you in a project directory?'
+          '✗ Arquivo feature_list.json não encontrado. Você está em um diretório de projeto?'
         )
       );
       process.exit(1);
@@ -886,7 +886,7 @@ program
     let session = 0;
 
     if (featureType) {
-      console.log(chalk.gray(`Filtering by type: ${featureType}\n`));
+      console.log(chalk.gray(`Filtrando por tipo: ${featureType}\n`));
     }
 
     while (session < maxSessions) {
@@ -896,12 +896,12 @@ program
         ? await contextBuilder.getNextFeatureByType(featureType)
         : await contextBuilder.getNextFeature();
       if (!feature) {
-        console.log(chalk.green('\n✓ All features are complete!'));
+        console.log(chalk.green('\n✓ Todas as features estão completas!'));
         break;
       }
 
       console.log(chalk.cyan(`\n${'═'.repeat(60)}`));
-      console.log(chalk.cyan.bold(`  Session ${session}: ${feature.id} - ${feature.title}`));
+      console.log(chalk.cyan.bold(`  Sessão ${session}: ${feature.id} - ${feature.title}`));
       console.log(chalk.cyan(`${'═'.repeat(60)}\n`));
 
       // Reset formatter para nova sessão
@@ -919,38 +919,38 @@ program
       });
 
       if (result.success) {
-        console.log(chalk.green(`\n✓ Session ${session} complete`));
+        console.log(chalk.green(`\n✓ Sessão ${session} completa`));
       } else {
-        console.log(chalk.yellow(`\n⚠ Session ${session} incomplete`));
+        console.log(chalk.yellow(`\n⚠ Sessão ${session} incompleta`));
         if (result.error) {
-          console.log(chalk.red(`  Error: ${result.error}`));
+          console.log(chalk.red(`  Erro: ${result.error}`));
         }
       }
 
-      // Small delay between sessions
+      // Pequeno delay entre sessões
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
-    // Final status
+    // Status final
     const stats = await contextBuilder.getProgressStats();
     console.log(chalk.cyan(`\n${'═'.repeat(60)}`));
-    console.log(chalk.cyan.bold('  Final Status'));
+    console.log(chalk.cyan.bold('  Status Final'));
     console.log(chalk.cyan(`${'═'.repeat(60)}`));
     console.log(
       chalk.gray(
-        `  Sessions: ${session}\n  Completed: ${stats.completed}/${stats.total} features (${stats.percentage}%)`
+        `  Sessões: ${session}\n  Completas: ${stats.completed}/${stats.total} features (${stats.percentage}%)`
       )
     );
     console.log(chalk.cyan(`${'═'.repeat(60)}\n`));
   });
 
 // ============================================
-// RESET Command
+// Comando RESET
 // ============================================
 program
   .command('reset')
-  .description('Reset all features to passes: false (keeps code)')
-  .option('-p, --project <path>', 'Project path (defaults to current directory)')
+  .description('Resetar todas as features para passes: false (mantém o código)')
+  .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .action(async (options: { project?: string }) => {
     const projectPath = options.project
       ? resolve(options.project)
@@ -960,18 +960,18 @@ program
     const featureList = await contextBuilder.loadFeatureList();
 
     if (!featureList) {
-      console.log(chalk.red('✗ No feature list found'));
+      console.log(chalk.red('✗ Lista de features não encontrada'));
       process.exit(1);
     }
 
     const answer = await askUser(
       chalk.yellow(
-        'This will reset all features to incomplete. Continue? [y/N]: '
+        'Isso vai resetar todas as features para incompletas. Continuar? [s/N]: '
       )
     );
 
-    if (answer.toLowerCase() !== 'y') {
-      console.log(chalk.gray('Cancelled'));
+    if (answer.toLowerCase() !== 's' && answer.toLowerCase() !== 'y') {
+      console.log(chalk.gray('Cancelado'));
       process.exit(0);
     }
 
@@ -980,15 +980,15 @@ program
     }
 
     await contextBuilder.saveFeatureList(featureList);
-    console.log(chalk.green('✓ All features reset to incomplete'));
+    console.log(chalk.green('✓ Todas as features resetadas para incompletas'));
   });
 
 // ============================================
-// Main
+// Principal
 // ============================================
 program
   .name('harness')
-  .description('Dev Agent Harness - AI-powered incremental development (uses Claude Agent SDK)')
+  .description('Dev Agent Harness - Desenvolvimento incremental com IA (usa Claude Agent SDK)')
   .version('1.0.0');
 
 program.parse();
