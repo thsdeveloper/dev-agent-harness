@@ -1,0 +1,42 @@
+{
+  "name": "dev-agent-harness",
+  "version": "1.0.0",
+  "description": "A harness for long-running AI coding agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "harness": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "harness",
+    "coding",
+    "anthropic",
+    "claude"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.17.1",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.62",
+    "chalk": "^5.4.1",
+    "commander": "^13.0.0",
+    "dotenv": "^17.2.3",
+    "ora": "^8.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}
