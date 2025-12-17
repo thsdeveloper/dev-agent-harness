@@ -17,6 +17,7 @@ import { ContextBuilder } from './core/context-builder.js';
 import { isAuthConfigured, getAuthMethod } from './core/agent-sdk-client.js';
 import { DEFAULT_AGENT_CONFIG, type FeatureType, type FeatureList, type TargetType } from './types/index.js';
 import { createOutputFormatter } from './core/output-formatter.js';
+import { getEmailNotifier, isEmailConfigured } from './core/email-notifier.js';
 
 const program = new Command();
 
@@ -67,7 +68,7 @@ function checkAuth(): boolean {
  * Handler compartilhado para comandos de execução (suporta filtragem por tipo)
  */
 async function runCommandHandler(
-  options: { project?: string; maxTurns?: string; supabaseRef?: string },
+  options: { project?: string; maxTurns?: string; supabaseRef?: string; notify?: boolean },
   featureType?: FeatureType
 ): Promise<void> {
   if (!checkAuth()) {
@@ -76,6 +77,8 @@ async function runCommandHandler(
 
   const projectPath = options.project ? resolve(options.project) : process.cwd();
   const maxTurns = parseInt(options.maxTurns || '50', 10);
+  const shouldNotify = options.notify && isEmailConfigured();
+  const startTime = Date.now();
 
   // Validar feature_list.json
   const featureListPath = join(projectPath, 'feature_list.json');
@@ -151,6 +154,25 @@ async function runCommandHandler(
     )
   );
   console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
+
+  // Enviar notificação por e-mail se configurado
+  if (shouldNotify) {
+    const featureList = await contextBuilder.loadFeatureList();
+    const notifier = getEmailNotifier();
+    const sent = await notifier.notifyRunCompletion({
+      type: 'run',
+      projectName: featureList?.project_name || 'Projeto',
+      projectPath,
+      result,
+      feature,
+      stats,
+      duration: Date.now() - startTime,
+    });
+
+    if (sent) {
+      console.log(chalk.gray('📧 Notificação enviada por e-mail'));
+    }
+  }
 }
 
 // ============================================
@@ -251,6 +273,7 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
   .action(async (options) => {
     await runCommandHandler(options);
   });
@@ -264,6 +287,7 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
   .action(async (options) => {
     await runCommandHandler(options, 'refactoring');
   });
@@ -277,6 +301,7 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
   .action(async (options) => {
     await runCommandHandler(options, 'bugfix');
   });
@@ -290,6 +315,7 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
   .action(async (options) => {
     await runCommandHandler(options, 'improvement');
   });
@@ -303,6 +329,7 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-m, --max-turns <n>', 'Máximo de turnos para o Claude', '50')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
   .action(async (options) => {
     await runCommandHandler(options, 'docs');
   });
@@ -854,7 +881,8 @@ program
   .option('-p, --project <path>', 'Caminho do projeto (padrão: diretório atual)')
   .option('-s, --supabase-ref <ref>', 'Ref do projeto Supabase (sobrescreve SUPABASE_PROJECT_REF)')
   .option('--type <type>', 'Processar apenas features de um tipo específico')
-  .action(async (options: { max?: string; maxTurns?: string; project?: string; supabaseRef?: string; type?: string }) => {
+  .option('-n, --notify', 'Enviar notificação por e-mail ao concluir')
+  .action(async (options: { max?: string; maxTurns?: string; project?: string; supabaseRef?: string; type?: string; notify?: boolean }) => {
     if (!checkAuth()) {
       process.exit(1);
     }
@@ -864,6 +892,8 @@ program
       : process.cwd();
     const maxSessions = parseInt(options.max || '100', 10);
     const maxTurns = parseInt(options.maxTurns || '50', 10);
+    const shouldNotify = options.notify && isEmailConfigured();
+    const startTime = Date.now();
 
     // Debug: log Supabase project ref
     if (options.supabaseRef) {
@@ -884,6 +914,10 @@ program
     const formatter = createOutputFormatter();
     const featureType = options.type as FeatureType | undefined;
     let session = 0;
+    let successfulSessions = 0;
+    let failedSessions = 0;
+    let lastError: string | undefined;
+    let stoppedReason: 'all_complete' | 'max_sessions' | 'error' = 'max_sessions';
 
     if (featureType) {
       console.log(chalk.gray(`Filtrando por tipo: ${featureType}\n`));
@@ -897,6 +931,7 @@ program
         : await contextBuilder.getNextFeature();
       if (!feature) {
         console.log(chalk.green('\n✓ Todas as features estão completas!'));
+        stoppedReason = 'all_complete';
         break;
       }
 
@@ -920,10 +955,13 @@ program
 
       if (result.success) {
         console.log(chalk.green(`\n✓ Sessão ${session} completa`));
+        successfulSessions++;
       } else {
         console.log(chalk.yellow(`\n⚠ Sessão ${session} incompleta`));
+        failedSessions++;
         if (result.error) {
           console.log(chalk.red(`  Erro: ${result.error}`));
+          lastError = result.error;
         }
       }
 
@@ -942,6 +980,28 @@ program
       )
     );
     console.log(chalk.cyan(`${'═'.repeat(60)}\n`));
+
+    // Enviar notificação por e-mail se configurado
+    if (shouldNotify) {
+      const featureList = await contextBuilder.loadFeatureList();
+      const notifier = getEmailNotifier();
+      const sent = await notifier.notifyLoopCompletion({
+        type: 'loop',
+        projectName: featureList?.project_name || 'Projeto',
+        projectPath,
+        totalSessions: session,
+        successfulSessions,
+        failedSessions,
+        stats,
+        duration: Date.now() - startTime,
+        stoppedReason,
+        lastError,
+      });
+
+      if (sent) {
+        console.log(chalk.gray('📧 Notificação enviada por e-mail'));
+      }
+    }
   });
 
 // ============================================
